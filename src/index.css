@@ -193,3 +193,39 @@
 .animate-fade-in {
   animation: fade-in 0.5s ease-out forwards;
 }
+
+/* Calm indeterminate loading for "Analyzing your speech..." */
+@keyframes analyzing {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.animate-analyzing {
+  animation: analyzing 2s ease-in-out infinite;
+}
+
+/* Results page: red flash when filler word is revealed during typewriter */
+@keyframes filler-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.results-flash-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 0, 0, 0.15);
+  pointer-events: none;
+  z-index: 50;
+  animation: filler-flash 200ms ease-out forwards;
+}

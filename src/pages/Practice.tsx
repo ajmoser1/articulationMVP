@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { transcribeAudio } from "@/services/transcription";
+import { Button } from "@/components/ui/button";
 
 type RecordingState = "idle" | "recording" | "processing";
 
@@ -13,6 +15,7 @@ const Practice = () => {
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -56,18 +59,22 @@ const Practice = () => {
     }
 
     setRecordingState("processing");
+    setTranscriptionError(null);
+  }, []);
 
-    // Simulate processing delay before showing results
-    setTimeout(() => {
-      // For now, just show a message - we'll add transcription next
-      setRecordingState("idle");
-      setTimeRemaining(60);
-      toast({
-        title: "Recording complete!",
-        description: "Transcription coming soon...",
-      });
-    }, 2000);
-  }, [toast]);
+  const startTranscription = useCallback(
+    async (blob: Blob) => {
+      try {
+        const transcript = await transcribeAudio(blob);
+        navigate("/results", { state: { transcript } });
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Transcription failed. Please try again.";
+        setTranscriptionError(message);
+      }
+    },
+    [navigate]
+  );
 
   const startRecording = async () => {
     try {
@@ -99,11 +106,11 @@ const Practice = () => {
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, {
+        const blob = new Blob(audioChunksRef.current, {
           type: mimeType || "audio/webm",
         });
-        setAudioBlob(audioBlob);
-        console.log("Recording saved:", audioBlob.size, "bytes");
+        setAudioBlob(blob);
+        startTranscription(blob);
       };
 
       mediaRecorder.onerror = (event) => {
@@ -242,13 +249,45 @@ const Practice = () => {
           style={{ animationDelay: "0.3s" }}
         >
           {recordingState === "processing" ? (
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-32 h-32 rounded-full bg-secondary flex items-center justify-center">
-                <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-              </div>
-              <p className="text-muted-foreground font-serif animate-pulse">
-                Processing...
-              </p>
+            <div className="flex flex-col items-center gap-6 w-full max-w-sm">
+              {transcriptionError ? (
+                <>
+                  <p className="text-sm text-destructive font-sans text-center">
+                    {transcriptionError}
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-3 w-full justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setTranscriptionError(null);
+                        if (audioBlob) startTranscription(audioBlob);
+                      }}
+                    >
+                      Try again
+                    </Button>
+                    <Button
+                      variant="secondary"
+                      onClick={() => {
+                        setTranscriptionError(null);
+                        setAudioBlob(null);
+                        setRecordingState("idle");
+                        setTimeRemaining(60);
+                      }}
+                    >
+                      Record again
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="w-full h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div className="h-full w-1/3 rounded-full bg-primary/60 animate-analyzing" />
+                  </div>
+                  <p className="text-muted-foreground font-serif animate-pulse">
+                    Analyzing your speech...
+                  </p>
+                </>
+              )}
             </div>
           ) : (
             <button
@@ -278,7 +317,8 @@ const Practice = () => {
           <p className="text-sm text-muted-foreground font-sans">
             {recordingState === "idle" && "Tap to start recording"}
             {recordingState === "recording" && "Tap to stop early, or wait for timer"}
-            {recordingState === "processing" && "Analyzing your speech..."}
+            {recordingState === "processing" &&
+              (transcriptionError ? "Try again or record a new clip." : "Analyzing your speech...")}
           </p>
         </div>
       </div>
