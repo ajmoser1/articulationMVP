@@ -3,7 +3,10 @@ const POLL_INTERVAL_MS = 1500;
 const TIMEOUT_MS = 60_000;
 
 type UploadResponse = { upload_url: string };
-type TranscriptCreateBody = { audio_url: string };
+type TranscriptCreateBody = {
+  audio_url: string;
+  speech_models: ("universal-3-pro" | "universal-2")[];
+};
 type TranscriptCreateResponse = { id: string };
 type TranscriptStatus = "queued" | "processing" | "completed" | "error";
 type TranscriptPollResponse = {
@@ -50,7 +53,10 @@ async function createTranscript(
   audioUrl: string,
   apiKey: string
 ): Promise<string> {
-  const body: TranscriptCreateBody = { audio_url: audioUrl };
+  const body: TranscriptCreateBody = {
+    audio_url: audioUrl,
+    speech_models: ["universal-2"],
+  };
   const res = await fetch(`${ASSEMBLYAI_BASE}/transcript`, {
     method: "POST",
     headers: {
