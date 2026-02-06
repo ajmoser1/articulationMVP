@@ -18,7 +18,19 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const prompt = `Generate 2 casual conversation topics for a ${gender} who lives in ${country} between the ages of ${ageRange}. Each topic should be something they can speak about naturally for about 45 seconds to a minute and might elicit filler words. Topics should be universal enough that anyone in this demographic would have something to say, like talking about daily routines, hobbies, local culture, or personal preferences. Return the topics as a simple JSON array of strings.`;
+    // Small random seed to encourage varied outputs even for identical demographics
+    const seed = Math.random().toString(36).slice(2, 8);
+
+    const prompt = `Seed: ${seed}.
+
+Generate 2 different casual conversation topics for a ${gender} who lives in ${country} between the ages of ${ageRange}.
+
+Requirements:
+- Each topic should be something they can speak about naturally for about 45 seconds to a minute and might elicit filler words.
+- Topics should be universal enough that anyone in this demographic would have something to say (daily routines, hobbies, local culture, personal preferences, etc.).
+- Avoid repeating the exact same topics or phrasing as in previous responses to similar prompts.
+
+Return the topics as a simple JSON array of exactly 2 strings, with no extra text or formatting.`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -28,10 +40,14 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         model: "google/gemini-3-flash-preview",
+        // Introduce some randomness so topics vary between calls
+        temperature: 0.8,
+        top_p: 0.9,
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that generates conversation topics. Always respond with a valid JSON array of exactly 2 topic strings. No other text or formatting.",
+            content:
+              "You are a helpful assistant that generates conversation topics. Always respond with a valid JSON array of exactly 2 topic strings. No other text or formatting.",
           },
           { role: "user", content: prompt },
         ],
