@@ -2,19 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { ArrowLeft, Loader2, MessageCircle, RefreshCw } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getDemographics, type UserDemographics } from "@/lib/persistence";
 
 const FALLBACK_TOPICS = [
   "Describe your morning routine",
   "Tell me about a place you enjoy visiting",
 ];
-
-interface UserDemographics {
-  gender: string;
-  ageRange: string;
-  country: string;
-}
 
 const TopicSelection = () => {
   const navigate = useNavigate();
@@ -75,13 +70,12 @@ const TopicSelection = () => {
   };
 
   useEffect(() => {
-    const stored = localStorage.getItem("userDemographics");
-    if (!stored) {
+    const demo = getDemographics();
+    if (!demo) {
       navigate("/questionnaire");
       return;
     }
 
-    const demo = JSON.parse(stored) as UserDemographics;
     setDemographics(demo);
     fetchTopics(demo);
   }, [navigate]);
@@ -98,25 +92,34 @@ const TopicSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8 flex flex-col">
+    <div className="min-h-screen bg-background px-6 py-8 pb-24 flex flex-col">
       {/* Header */}
       <div className="mb-8 flex items-center justify-between">
         <button
           onClick={() => navigate("/questionnaire")}
-          className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
+          className="flex items-center gap-2 h-11 px-4 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        {!isLoading && (
+        <div className="flex items-center gap-4">
+          {!isLoading && (
+            <button
+              onClick={handleRefresh}
+              className="flex items-center gap-2 h-11 px-4 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
+            >
+              <RefreshCw className="w-4 h-4" />
+              New topics
+            </button>
+          )}
           <button
-            onClick={handleRefresh}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
+            onClick={() => navigate("/questionnaire")}
+            className="h-11 w-11 flex items-center justify-center rounded-full text-muted-foreground hover:text-foreground transition-colors"
+            aria-label="Edit demographics"
           >
-            <RefreshCw className="w-4 h-4" />
-            New topics
+            <Settings className="w-4 h-4" />
           </button>
-        )}
+        </div>
       </div>
 
       <div className="flex-1 max-w-md mx-auto w-full flex flex-col">

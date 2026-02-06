@@ -163,7 +163,8 @@ const Practice = () => {
         if (error.name === "NotAllowedError") {
           toast({
             title: "Microphone access denied",
-            description: "Please allow microphone access to record.",
+            description:
+              "Please allow microphone access in your browser settings (for example, Safari or Chrome > Site Settings > Microphone).",
             variant: "destructive",
           });
         } else if (error.name === "NotFoundError") {
@@ -215,7 +216,7 @@ const Practice = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8 flex flex-col">
+    <div className="min-h-screen bg-background px-6 py-8 pb-24 flex flex-col">
       {/* Header */}
       <div className="mb-8">
         <button

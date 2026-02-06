@@ -13,6 +13,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { saveDemographics } from "@/lib/persistence";
 
 const COUNTRIES = [
   "United States", "United Kingdom", "Canada", "Australia", "Germany",
@@ -70,7 +71,7 @@ const Questionnaire = () => {
     setTouched({ gender: true, ageRange: true, country: true });
     
     if (validateForm()) {
-      localStorage.setItem("userDemographics", JSON.stringify(formData));
+      saveDemographics(formData);
       navigate("/topics");
     }
   };
@@ -84,7 +85,7 @@ const Questionnaire = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background px-6 py-8 flex flex-col">
+    <div className="min-h-screen bg-background px-6 py-8 pb-24 flex flex-col">
       {/* Header */}
       <div className="mb-8">
         <button 

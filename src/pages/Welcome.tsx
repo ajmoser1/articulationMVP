@@ -1,12 +1,22 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MessageCircle, Sparkles, Target } from "lucide-react";
+import { getDemographics } from "@/lib/persistence";
 
 const Welcome = () => {
   const navigate = useNavigate();
 
+  // If demographics already exist, skip intro + quiz and go straight to topics.
+  useEffect(() => {
+    const demo = getDemographics();
+    if (demo) {
+      navigate("/topics", { replace: true });
+    }
+  }, [navigate]);
+
   return (
-    <div className="min-h-screen bg-background px-6 py-12 flex flex-col">
+    <div className="min-h-screen bg-background px-6 py-12 pb-24 flex flex-col">
       {/* Header */}
       <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full">
         {/* Icon */}

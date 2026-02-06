@@ -31,6 +31,8 @@ export interface ProgressStats {
 }
 
 const DEMOGRAPHICS_KEY = "user_demographics";
+// Legacy key used before introducing this utility
+const LEGACY_DEMOGRAPHICS_KEY = "userDemographics";
 const EXERCISE_HISTORY_KEY = "exercise_history";
 
 // Rough localStorage limit is ~5MB; keep a safety margin.
@@ -83,7 +85,11 @@ export function saveDemographics(demographics: UserDemographics): void {
 }
 
 export function getDemographics(): UserDemographics | null {
-  const raw = safeGetItem(DEMOGRAPHICS_KEY);
+  let raw = safeGetItem(DEMOGRAPHICS_KEY);
+  // Fallback to legacy key if new key not present
+  if (!raw) {
+    raw = safeGetItem(LEGACY_DEMOGRAPHICS_KEY);
+  }
   if (!raw) return null;
   try {
     const parsed = JSON.parse(raw) as UserDemographics;

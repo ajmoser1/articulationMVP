@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        serif: ["'Crimson Text'", "Georgia", "'Times New Roman'", "serif"],
-        sans: ["'Inter'", "system-ui", "sans-serif"],
+        serif: ["Georgia", "'Times New Roman'", "serif"],
+        sans: ["system-ui", "-apple-system", "BlinkMacSystemFont", "'Segoe UI'", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -50,6 +50,13 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        warm: {
+          background: "#FAF9F6",
+          text: "#2C2C2C",
+          accent: "#C67B5C",
+          "accent-foreground": "#FAF9F6",
+          filler: "#D64545",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",

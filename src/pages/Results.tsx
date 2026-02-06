@@ -6,8 +6,9 @@ import {
   type FillerCategory,
 } from "@/lib/fillerWords";
 import { Button } from "@/components/ui/button";
+import { saveExerciseResult } from "@/lib/persistence";
 
-const TYPEWRITER_MS_PER_CHAR = 50;
+const TYPEWRITER_MS_PER_CHAR = 60;
 
 type ResultsLocationState = {
   transcript?: string;
@@ -136,6 +137,28 @@ const Results = () => {
     }
   }, [transcript, navigate]);
 
+  // Persist this exercise to localStorage once we have transcript + analysis.
+  useEffect(() => {
+    if (!analysisResults || typeof transcript !== "string" || transcript.trim() === "") {
+      return;
+    }
+
+    const topic =
+      (typeof window !== "undefined" &&
+        window.localStorage &&
+        window.localStorage.getItem("selectedTopic")) ||
+      "Practice topic";
+
+    saveExerciseResult({
+      timestamp: new Date().toISOString(),
+      topic,
+      totalFillerWords: analysisResults.totalFillerWords,
+      fillersPerMinute: analysisResults.fillersPerMinute,
+      categoryCounts: analysisResults.categoryCounts,
+      transcript,
+    });
+  }, [analysisResults, transcript]);
+
   const segments = useMemo(() => {
     if (typeof transcript !== "string" || !analysisResults) return [];
     return buildSegments(
@@ -166,7 +189,7 @@ const Results = () => {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-screen flex flex-col pb-24"
       style={{ backgroundColor: "#FAF9F6" }}
     >
       {/* Flash overlay: remount per flash so animation runs */}
@@ -206,8 +229,8 @@ const Results = () => {
               seg.type === "filler" ? (
                 <span
                   key={i}
-                  className="bg-red-100 text-red-800 rounded px-0.5"
-                  style={{ backgroundColor: "rgba(254, 226, 226, 0.9)", color: "#991b1b" }}
+                  className="rounded px-0.5"
+                  style={{ backgroundColor: "#FBE8E8", color: "#D64545" }}
                 >
                   {seg.text}
                 </span>
@@ -279,8 +302,8 @@ const Results = () => {
           </Button>
           <Button
             variant="secondary"
-            disabled
-            className="font-sans text-stone-500 cursor-not-allowed"
+            className="font-sans text-stone-700"
+            onClick={() => navigate("/progress")}
           >
             View Progress
           </Button>
