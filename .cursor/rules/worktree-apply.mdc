@@ -1,0 +1,16 @@
+---
+description: Apply edits in-chat to avoid Cursor Apply/merge/EROFS issues in worktrees
+alwaysApply: true
+---
+
+# Applying Agent Edits (Worktrees)
+
+This project is often used in Cursor **worktrees**. Cursor's "Apply" button can fail with:
+- **Merge conflicts** (e.g. "Your local changes conflict with agent changes in N files")
+- **EROFS** when overwriting: `Unable to write file '/articulationMVP/...' (read-only file system)` — Cursor uses a wrong path (`/articulationMVP` from root) instead of the real workspace path.
+
+## What to do
+
+1. **Agent**: Always apply edits **in-chat** using your edit tools (e.g. `search_replace`, `write`) so changes are written to the **actual workspace path** from context. Do not rely on the user clicking "Apply" in the UI for multi-file or worktree sessions.
+2. **If the user says Apply failed or they see merge conflicts / EROFS**: Re-apply the same changes in-chat so the edits land in the correct files in the current worktree. Prefer applying directly over instructing the user to use Apply.
+3. **User**: If "Apply" shows conflicts or EROFS, ask the agent to "apply the changes in chat" or "apply the edits directly" — the agent will write to the right path and you avoid the bug.
