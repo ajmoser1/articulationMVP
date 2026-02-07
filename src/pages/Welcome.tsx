@@ -19,7 +19,8 @@ const Welcome = () => {
 
   return (
     <div className="min-h-screen bg-gradient-layered px-6 py-12 pb-24 flex flex-col relative">
-      <WatercolorBlob position="bottom-right" color="terracotta" />
+      <WatercolorBlob position="top-right" colorScheme="purple-pink" size={600} />
+      <WatercolorBlob position="bottom-left" colorScheme="blue-cyan" size={500} />
       <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full relative z-10">
         {/* Icon */}
         <div className="mb-8 opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>

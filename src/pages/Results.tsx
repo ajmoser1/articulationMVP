@@ -191,7 +191,8 @@ const Results = () => {
       {/* Flash overlay */}
       {flashKey > 0 && <div key={flashKey} className="results-flash-overlay" />}
 
-      <WatercolorBlob position="center-top" color="burgundy" size={520} />
+      <WatercolorBlob position="center-top" colorScheme="celebration" size={700} />
+      <WatercolorBlob position="bottom-left" colorScheme="purple-pink" size={500} />
 
       <div className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full flex flex-col gap-8 relative z-10">
         {/* Top metrics */}

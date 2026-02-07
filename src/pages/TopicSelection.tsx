@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings } from "lucide-r
 import { useToast } from "@/hooks/use-toast";
 import { getDemographics, getExerciseHistory, type UserDemographics } from "@/lib/persistence";
 import { GlassCard } from "@/components/ui/glass-card";
+import { WatercolorBlob } from "@/components/ui/WatercolorBlob";
 
 const FALLBACK_TOPICS = [
   "Describe your morning routine",
@@ -98,9 +99,11 @@ const TopicSelection = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-layered px-6 py-8 pb-24 flex flex-col">
+    <div className="min-h-screen bg-gradient-layered px-6 py-8 pb-24 flex flex-col relative">
+      <WatercolorBlob position="center-top" colorScheme="green-purple" size={620} />
+      <WatercolorBlob position="top-right" colorScheme="purple-pink" size={450} />
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between relative z-10">
         <button
           onClick={() => navigate("/questionnaire")}
           className="flex items-center gap-2 h-11 px-4 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
@@ -128,7 +131,7 @@ const TopicSelection = () => {
         </div>
       </div>
 
-      <div className="flex-1 max-w-md mx-auto w-full flex flex-col">
+      <div className="flex-1 max-w-md mx-auto w-full flex flex-col relative z-10">
         {/* Title */}
         <div className="mb-8 opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <h1 className="text-3xl font-serif font-bold text-foreground mb-2">

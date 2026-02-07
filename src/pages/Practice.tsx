@@ -211,7 +211,8 @@ const Practice = () => {
 
   return (
     <div className="min-h-screen bg-gradient-layered px-6 py-8 pb-24 flex flex-col relative">
-      <WatercolorBlob position="center-top" color="amber" size={540} />
+      <WatercolorBlob position="center-top" colorScheme="blue-pink" size={650} />
+      <WatercolorBlob position="bottom-right" colorScheme="purple-pink" size={450} />
       <div className="mb-8 relative z-10">
         <button
           onClick={() => navigate("/topics")}

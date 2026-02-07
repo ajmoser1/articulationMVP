@@ -36,8 +36,9 @@ const ProgressPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-layered px-6 py-10 pb-24 flex flex-col items-center relative">
-      <WatercolorBlob position="top-left" color="terracotta" size={420} />
-      <WatercolorBlob position="bottom-right" color="amber" size={480} />
+      <WatercolorBlob position="top-left" colorScheme="rainbow" size={550} />
+      <WatercolorBlob position="bottom-right" colorScheme="blue-cyan" size={500} />
+      <WatercolorBlob position="center" colorScheme="green-purple" size={400} />
       <div className="w-full max-w-3xl space-y-8 relative z-10">
         <header>
           <h1 className="text-2xl font-serif font-semibold text-foreground mb-2">
