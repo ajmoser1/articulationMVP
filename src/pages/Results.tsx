@@ -444,10 +444,10 @@ const Results = () => {
                 <XAxis dataKey="label" tickLine={false} axisLine={false} />
                 <YAxis hide />
                 <Tooltip
-                  cursor={{ fill: "rgba(198, 123, 92, 0.08)" }}
+                  cursor={{ fill: "rgba(74, 103, 65, 0.08)" }}
                   contentStyle={{
                     background: "rgba(255,255,255,0.9)",
-                    border: "1px solid rgba(198,123,92,0.2)",
+                    border: "1px solid rgba(74,103,65,0.2)",
                     borderRadius: "12px",
                   }}
                 />
