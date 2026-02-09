@@ -997,17 +997,17 @@
 .futurism-block {
   position: absolute;
   pointer-events: none;
-  opacity: 0.32;
+  opacity: 0.5;
   border: 2px solid transparent;
-  mix-blend-mode: multiply;
-  filter: saturate(1.15) contrast(1.05);
+  mix-blend-mode: normal;
+  filter: saturate(1.35) contrast(1.1);
   translate: 0 0;
   animation: futurism-drift 12s ease-in-out infinite;
   will-change: transform;
 }
 
-.futurism-strong { opacity: 0.4; }
-.futurism-intense { opacity: 0.48; }
+.futurism-strong { opacity: 0.6; }
+.futurism-intense { opacity: 0.7; }
 
 [data-theme="dark"] .futurism-block {
   mix-blend-mode: screen;
@@ -1019,7 +1019,7 @@
 .futurism-block-1 {
   width: 640px;
   height: 900px;
-  background: linear-gradient(135deg, rgba(76, 201, 240, 0.34) 0%, rgba(114, 9, 183, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(76, 201, 240, 0.55) 0%, rgba(114, 9, 183, 0.5) 100%);
   transform: rotate(-15deg) skewY(-8deg);
   clip-path: polygon(0 0, 100% 10%, 95% 100%, 5% 90%);
 }
@@ -1027,7 +1027,7 @@
 .futurism-block-2 {
   width: 520px;
   height: 820px;
-  background: linear-gradient(45deg, rgba(247, 37, 133, 0.32) 0%, rgba(6, 255, 165, 0.28) 100%);
+  background: linear-gradient(45deg, rgba(247, 37, 133, 0.52) 0%, rgba(6, 255, 165, 0.45) 100%);
   transform: rotate(25deg);
   clip-path: polygon(20% 0%, 100% 0%, 80% 100%, 0% 100%);
 }
@@ -1035,7 +1035,7 @@
 .futurism-block-3 {
   width: 760px;
   height: 520px;
-  background: linear-gradient(135deg, rgba(114, 9, 183, 0.34) 0%, rgba(247, 37, 133, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(114, 9, 183, 0.55) 0%, rgba(247, 37, 133, 0.5) 100%);
   transform: rotate(-8deg) skewX(-6deg);
   clip-path: polygon(5% 0%, 100% 5%, 95% 95%, 0% 100%);
 }
@@ -1043,7 +1043,7 @@
 .futurism-block-4 {
   width: 520px;
   height: 520px;
-  background: linear-gradient(135deg, rgba(76, 201, 240, 0.34) 0%, rgba(74, 222, 128, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(76, 201, 240, 0.55) 0%, rgba(74, 222, 128, 0.5) 100%);
   transform: rotate(10deg);
   clip-path: polygon(0 10%, 100% 0, 90% 100%, 10% 90%);
 }
@@ -1051,7 +1051,7 @@
 .futurism-triangle-1 {
   width: 540px;
   height: 540px;
-  background: linear-gradient(135deg, rgba(247, 37, 133, 0.34) 0%, rgba(114, 9, 183, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(247, 37, 133, 0.55) 0%, rgba(114, 9, 183, 0.5) 100%);
   transform: rotate(18deg);
   clip-path: polygon(0 100%, 100% 100%, 30% 0);
 }
@@ -1059,7 +1059,7 @@
 .futurism-triangle-2 {
   width: 420px;
   height: 420px;
-  background: linear-gradient(135deg, rgba(76, 201, 240, 0.36) 0%, rgba(6, 255, 165, 0.3) 100%);
+  background: linear-gradient(135deg, rgba(76, 201, 240, 0.58) 0%, rgba(6, 255, 165, 0.5) 100%);
   transform: rotate(-22deg);
   clip-path: polygon(0 0, 100% 30%, 0 100%);
 }
@@ -1069,20 +1069,20 @@
 .futurism-stripe-3 {
   width: 900px;
   height: 4px;
-  background: rgba(76, 201, 240, 0.28);
+  background: rgba(76, 201, 240, 0.55);
   transform: rotate(35deg);
   opacity: 0.6;
 }
 
 .futurism-stripe-2 {
   height: 3px;
-  background: rgba(247, 37, 133, 0.28);
+  background: rgba(247, 37, 133, 0.55);
   transform: rotate(45deg);
 }
 
 .futurism-stripe-3 {
   height: 2px;
-  background: rgba(6, 255, 165, 0.3);
+  background: rgba(6, 255, 165, 0.6);
   transform: rotate(60deg);
 }
 
