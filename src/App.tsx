@@ -11,6 +11,8 @@ import TopicSelection from "./pages/TopicSelection";
 import Practice from "./pages/Practice";
 import Results from "./pages/Results";
 import ProgressPage from "./pages/ResultsPage";
+import Impromptu from "./pages/Impromptu";
+import ImpromptuResults from "./pages/ImpromptuResults";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -91,6 +93,8 @@ const App = () => {
             <Route path="/practice" element={<Practice />} />
             <Route path="/results" element={<Results />} />
             <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/impromptu" element={<Impromptu />} />
+            <Route path="/impromptu-results" element={<ImpromptuResults />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

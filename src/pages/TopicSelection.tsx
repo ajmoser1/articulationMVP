@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings, Trash2 } from "lucide-react";
+import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings, Trash2, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { clearLocalData, getDemographics, getExerciseHistory, type UserDemographics } from "@/lib/persistence";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -195,6 +195,28 @@ const TopicSelection = () => {
             Pick a topic to practice speaking about for 45-60 seconds
           </p>
         </div>
+
+        {/* Impromptu exercise link */}
+        <GlassCard
+          variant="interactive"
+          className="p-6 mb-4 opacity-0 animate-fade-in border-2 border-primary/30"
+          style={{ animationDelay: "0.15s" }}
+          onClick={() => navigate("/impromptu")}
+        >
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full glass-subtle flex items-center justify-center flex-shrink-0 bg-primary/10">
+              <Zap className="w-5 h-5 text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="text-foreground font-serif font-semibold text-lg leading-relaxed">
+                Impromptu Response
+              </p>
+              <p className="text-sm text-muted-foreground font-sans mt-1">
+                5 seconds to think, then record your opinion or analysis
+              </p>
+            </div>
+          </div>
+        </GlassCard>
 
         {/* Topics */}
         <div className="flex-1 flex flex-col gap-4">
