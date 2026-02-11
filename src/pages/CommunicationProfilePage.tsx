@@ -91,8 +91,7 @@ const CommunicationProfilePage = () => {
     }
     navigate("/dashboard");
   };
-
-const CommunicationProfilePage = () => {
+ 
   return (
     <div className="min-h-screen bg-gradient-layered px-6 py-10 pb-32 flex flex-col relative page-transition">
       <FuturismBlock
