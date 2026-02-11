@@ -110,6 +110,18 @@ const Questionnaire = () => {
         className="top-24 right-[-140px]"
         zIndex={1}
       />
+      <FuturismBlock
+        variant="block-3"
+        className="top-[75vh] left-[-160px] futurism-strong"
+        borderColor="#F72585"
+        zIndex={1}
+      />
+      <FuturismBlock
+        variant="triangle-1"
+        className="top-[150vh] right-[-180px] futurism-strong"
+        borderColor="#4CC9F0"
+        zIndex={2}
+      />
       <div className="mb-8 relative z-10">
         <button 
           onClick={() => navigate("/")}

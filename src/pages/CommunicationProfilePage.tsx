@@ -111,6 +111,18 @@ const CommunicationProfilePage = () => {
         className="top-40 right-[-160px]"
         zIndex={1}
       />
+      <FuturismBlock
+        variant="block-2"
+        className="top-[80vh] left-[-180px] futurism-intense"
+        borderColor="#F72585"
+        zIndex={1}
+      />
+      <FuturismBlock
+        variant="triangle-2"
+        className="top-[160vh] right-[-200px] futurism-intense"
+        borderColor="#4ADE80"
+        zIndex={2}
+      />
 
       <div className="max-w-2xl mx-auto w-full flex flex-col gap-8 relative z-10">
         <section

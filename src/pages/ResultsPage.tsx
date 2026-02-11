@@ -60,6 +60,18 @@ const ProgressPage = () => {
         className="top-28 right-[-140px]"
         zIndex={1}
       />
+      <FuturismBlock
+        variant="block-1"
+        className="top-[75vh] left-[-160px] futurism-strong"
+        borderColor="#4CC9F0"
+        zIndex={1}
+      />
+      <FuturismBlock
+        variant="triangle-2"
+        className="top-[150vh] right-[-180px] futurism-strong"
+        borderColor="#4ADE80"
+        zIndex={2}
+      />
       <div className="w-full max-w-3xl space-y-8 relative z-10">
         <header>
           <h1 className="text-2xl font-serif font-semibold text-foreground mb-2">

@@ -132,6 +132,18 @@ const TopicSelection = () => {
         className="top-32 right-[-140px]"
         zIndex={1}
       />
+      <FuturismBlock
+        variant="block-2"
+        className="top-[70vh] left-[-160px] futurism-strong"
+        borderColor="#F72585"
+        zIndex={1}
+      />
+      <FuturismBlock
+        variant="triangle-2"
+        className="top-[145vh] right-[-180px] futurism-strong"
+        borderColor="#4CC9F0"
+        zIndex={2}
+      />
       {/* Sticky options */}
       <div className="fixed top-6 right-20 z-40">
         <Popover>

@@ -167,6 +167,18 @@ const ImpromptuResults = () => {
         className="top-44 left-[-140px]"
         zIndex={1}
       />
+      <FuturismBlock
+        variant="block-4"
+        className="top-[80vh] right-[-180px] futurism-intense"
+        borderColor="#4CC9F0"
+        zIndex={1}
+      />
+      <FuturismBlock
+        variant="triangle-1"
+        className="top-[160vh] left-[-180px] futurism-intense"
+        borderColor="#F72585"
+        zIndex={2}
+      />
 
       <div className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full flex flex-col gap-12 md:gap-16 relative z-10">
         {/* Hero - metrics */}

@@ -187,20 +187,20 @@
   }
 
   @media (min-width: 768px) {
-    html, body {
-      overflow: hidden;
-    }
-
     .page-transition {
       padding: 20px 20px 24px !important;
     }
+  }
+
+  html, body {
+    overflow-x: hidden;
   }
 
   html {
     font-family: var(--font-sans);
     font-size: 16px;
     letter-spacing: 0.01em;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
   }
 
   /* Focus ring accessibility */
@@ -218,6 +218,8 @@
     @apply bg-background text-foreground antialiased;
     line-height: 1.75;
     position: relative;
+    overscroll-behavior-y: none;
+    -webkit-overflow-scrolling: touch;
   }
 
   /* Subtle paper grain / noise texture - barely perceptible, behind all content */
