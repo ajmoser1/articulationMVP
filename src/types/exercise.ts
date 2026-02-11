@@ -32,7 +32,7 @@ export interface ExerciseAttempt {
   duration: number; // seconds
   score: number; // 0-100
   metrics: Record<string, unknown>;
-  impactedScores: CommunicationSubscore[];
+  impactedScores: Record<CommunicationSubscore, number>;
   xpEarned: number;
 }
 

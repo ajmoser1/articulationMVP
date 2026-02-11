@@ -13,6 +13,9 @@ import { FillerCategoryCard } from "@/components/FillerCategoryCard";
 import { saveExerciseResult } from "@/lib/persistence";
 import { FILLER_CATEGORIES } from "@/lib/fillerWords";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { useToast } from "@/hooks/use-toast";
+import { getExerciseAttempts, getUserProgress, saveExerciseAttempt } from "@/utils/storage";
+import type { ExerciseAttempt } from "@/types/exercise";
 
 const TYPEWRITER_MS_PER_CHAR = 40;
 
@@ -116,6 +119,7 @@ function useCountUp(target: number, durationMs: number) {
 const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const state = location.state as ResultsLocationState;
   const transcript = state?.transcript;
   const passedAnalysis = state?.analysisResults;
@@ -131,6 +135,11 @@ const Results = () => {
   const [flashKey, setFlashKey] = useState(0);
   const [typewriterDone, setTypewriterDone] = useState(false);
   const [glowPositions, setGlowPositions] = useState<Set<number>>(new Set());
+  const [xpEarned, setXpEarned] = useState(0);
+  const [improvedSubscore, setImprovedSubscore] = useState<string | null>(null);
+  const [streakMaintained, setStreakMaintained] = useState(false);
+
+  const USER_ID = "default";
 
   const fillerStarts = useMemo(
     () =>
@@ -196,6 +205,86 @@ const Results = () => {
         window.localStorage.getItem("selectedTopic")) ||
       "Practice topic";
 
+    const fillerCount = analysisResults.totalFillerWords;
+    const fluencyScore = Math.max(0, 100 - fillerCount * 2);
+    const meanderingDetected =
+      analysisResults.distributionAnalysis.middle >
+        analysisResults.distributionAnalysis.beginning +
+          analysisResults.distributionAnalysis.end &&
+      fillerCount >= 6;
+    const clarityScore = meanderingDetected
+      ? Math.max(0, 100 - analysisResults.distributionAnalysis.middle * 3)
+      : null;
+
+    const attempts = getExerciseAttempts(USER_ID, "filler-words");
+    const prevAttempt = attempts[attempts.length - 1];
+    const prevFluency =
+      prevAttempt?.metrics && typeof prevAttempt.metrics["fluencyScore"] === "number"
+        ? (prevAttempt.metrics["fluencyScore"] as number)
+        : null;
+
+    const improvementPct =
+      prevFluency && prevFluency > 0
+        ? Math.max(0, ((fluencyScore - prevFluency) / prevFluency) * 100)
+        : 0;
+    const improvementBonus = Math.floor(improvementPct / 10) * 10;
+
+    const progressBefore = getUserProgress(USER_ID);
+    const lastDate = progressBefore.lastPracticeDate;
+    const today = new Date().toISOString().slice(0, 10);
+    const diffDays = lastDate ? Math.round((Date.parse(today) - Date.parse(lastDate)) / 86400000) : null;
+    const streakBonus = diffDays === 1 ? 10 : 0;
+    const streakMaintainedNow = diffDays === 1;
+
+    const previousBest = attempts.reduce((best, attempt) => {
+      const value =
+        attempt.metrics && typeof attempt.metrics["fluencyScore"] === "number"
+          ? (attempt.metrics["fluencyScore"] as number)
+          : 0;
+      return Math.max(best, value);
+    }, 0);
+    const personalBestBonus = fluencyScore > previousBest ? 25 : 0;
+
+    const baseXp = 50;
+    const totalXp = baseXp + improvementBonus + streakBonus + personalBestBonus;
+
+    const impactedScores: Record<"fluency" | "clarity", number> = {
+      fluency: fluencyScore,
+      ...(clarityScore !== null ? { clarity: clarityScore } : {}),
+    };
+
+    const attempt: ExerciseAttempt = {
+      id: `attempt_${Date.now()}`,
+      exerciseId: "filler-words",
+      userId: USER_ID,
+      timestamp: new Date(),
+      duration: Math.round(durationMinutes * 60),
+      score: fluencyScore,
+      metrics: {
+        fluencyScore,
+        clarityScore,
+        fillerCount,
+        fillersPerMinute: analysisResults.fillersPerMinute,
+        categoryCounts: analysisResults.categoryCounts,
+        distributionAnalysis: analysisResults.distributionAnalysis,
+      },
+      impactedScores,
+      xpEarned: totalXp,
+    };
+
+    const firstExercise = attempts.length === 0;
+    const archetypeOverride = firstExercise ? undefined : progressBefore.archetype;
+    saveExerciseAttempt(USER_ID, attempt, archetypeOverride);
+
+    setXpEarned(totalXp);
+    setStreakMaintained(streakMaintainedNow);
+    setImprovedSubscore(clarityScore !== null ? "Clarity" : "Fluency");
+
+    toast({
+      title: "Nice work!",
+      description: `You earned ${totalXp} XP.`,
+    });
+
     saveExerciseResult({
       timestamp: new Date().toISOString(),
       topic,
@@ -204,7 +293,7 @@ const Results = () => {
       categoryCounts: analysisResults.categoryCounts,
       transcript,
     });
-  }, [analysisResults, transcript]);
+  }, [analysisResults, transcript, durationMinutes, toast]);
 
   const segments = useMemo(() => {
     if (typeof transcript !== "string" || !analysisResults) return [];
@@ -302,6 +391,7 @@ const Results = () => {
 
   const totalCount = useCountUp(totalFillerWords, 800);
   const fpmCount = useCountUp(fillersPerMinute, 800);
+  const xpCount = useCountUp(xpEarned, 800);
 
   const heroReveal = useScrollReveal({ threshold: 0.1 });
   const categoryReveal = useScrollReveal({ threshold: 0.2 });
@@ -385,6 +475,15 @@ const Results = () => {
               <span className="text-sm uppercase tracking-[0.2em] text-muted-foreground font-sans">
                 Fillers per minute
               </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="text-3xl font-serif font-bold text-primary tabular-nums">
+                {Math.round(xpCount)}
+              </div>
+              <div className="text-sm text-muted-foreground font-sans">
+                Points earned {improvedSubscore ? `• ${improvedSubscore} improved` : ""}
+                {streakMaintained ? " • Streak maintained" : ""}
+              </div>
             </div>
           </div>
           <div className="flex flex-col gap-3">
@@ -566,7 +665,10 @@ const Results = () => {
               if (typeof window !== "undefined") {
                 window.localStorage.setItem("onboarding_complete", "true");
               }
-              navigate("/communication-profile");
+              const next = xpEarned > 0 && getExerciseAttempts(USER_ID, "filler-words").length === 1
+                ? "/communication-profile"
+                : "/dashboard";
+              navigate(next);
             }}
           >
             View Progress

@@ -129,10 +129,18 @@ export function getUserProgress(userId: string): UserProgress {
   return parseProgress(raw, userId);
 }
 
-export function saveExerciseAttempt(userId: string, attempt: ExerciseAttempt): void {
+function persistAttempt(userId: string, attempt: ExerciseAttempt): void {
   const attempts = getExerciseHistory(userId);
   attempts.push(attempt);
   setAttempts(userId, attempts);
+}
+
+export function saveExerciseAttempt(
+  userId: string,
+  attempt: ExerciseAttempt,
+  archetypeOverride?: UserArchetype
+): UserProgress {
+  return updateProgressAfterExercise(userId, attempt, archetypeOverride);
 }
 
 export function getExerciseHistory(userId: string): ExerciseAttempt[] {
@@ -193,11 +201,12 @@ export function updateProgressAfterExercise(
   progress = updateStreak(progress, attempt.timestamp);
 
   const updatedScore = { ...progress.communicationScore };
-  attempt.impactedScores.forEach((subscore) => {
-    const current = updatedScore[subscore];
+  Object.entries(attempt.impactedScores).forEach(([subscore, value]) => {
+    const key = subscore as CommunicationSubscore;
+    const current = updatedScore[key];
     const nextValue =
-      typeof current === "number" ? Math.round(current * 0.7 + attempt.score * 0.3) : attempt.score;
-    updatedScore[subscore] = Math.max(0, Math.min(100, nextValue));
+      typeof current === "number" ? Math.round(current * 0.7 + value * 0.3) : value;
+    updatedScore[key] = Math.max(0, Math.min(100, nextValue));
   });
 
   updatedScore.overall = recalcOverall(updatedScore);
@@ -214,7 +223,7 @@ export function updateProgressAfterExercise(
   nextProgress.archetype = archetypeOverride ?? determineArchetype(nextProgress.communicationScore) ?? DEFAULT_ARCHETYPE;
 
   setProgress(userId, nextProgress);
-  saveExerciseAttempt(userId, attempt);
+  persistAttempt(userId, attempt);
 
   return nextProgress;
 }
