@@ -35,8 +35,6 @@ export function FillerCategoryCard({
       className={cn("filler-card glass-card", expanded && "is-expanded")}
       data-tier={tier}
       style={{ borderLeftColor: color }}
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
       onClick={() => setExpanded((prev) => !prev)}
       role="button"
       aria-expanded={expanded}
