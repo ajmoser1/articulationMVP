@@ -51,7 +51,7 @@ serve(async (req) => {
     const hobbiesList =
       typeof hobbies === "string" && hobbies.trim().length > 0
         ? hobbies
-            .split(",")
+            .split(/[,/;|]/)
             .map((h: string) => h.trim())
             .filter(Boolean)
             .slice(0, 6)
@@ -70,12 +70,22 @@ serve(async (req) => {
 
 ${themeHint}
 
-Generate 2 casual conversation topics for a ${gender} ${roleText} who lives in ${country} between the ages of ${ageRange}. ${interestsText}
+Generate 2 realistic spoken-practice topics for a ${gender} ${roleText} who lives in ${country} and is in the ${ageRange} age range. ${interestsText}
 
 Requirements:
-- Each topic should be something they can speak about naturally for about 2 minutes and might elicit filler words.
-- Topics should relate to their interests or daily experiences when possible.
-- The two topics should feel clearly different from each other.${recentTopicsNote}
+- Personalization is mandatory:
+  - Topic 1 should be primarily role-contextual (school/work/career/day-to-day responsibilities for their role).
+  - Topic 2 should be primarily interest-contextual (anchored to one of their hobbies/interests if provided).
+- Topics should sound like things this specific person would actually discuss in conversation with a friend, classmate, teammate, manager, or colleague.
+- Avoid broad/generic prompts (for example: "describe your morning routine", "talk about your favorite food", "describe a place you like") unless tightly customized to role/interests.
+- Each topic should be concrete and scenario-based, not abstract.
+- Each topic should be naturally speakable for about 1-2 minutes and likely to produce realistic conversational hesitations/filler words.
+- The two topics should feel clearly different from each other and not paraphrases.${recentTopicsNote}
+
+Quality bar:
+- Prefer familiar situations over universal icebreakers.
+- Use plain, conversational wording.
+- Output only the topic lines (no numbering prefixes like "1."/"2."). 
 
 Return the topics as a simple JSON array of exactly 2 strings, with no extra text or formatting.`;
 

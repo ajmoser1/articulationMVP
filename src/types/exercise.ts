@@ -57,7 +57,7 @@ export interface ExerciseConfig {
   estimatedTime: number; // seconds
   type: "verbal" | "written" | "both";
   category: string;
-  tier: "foundation" | "intermediate" | "advanced";
+  tier: "foundation" | "adaptive" | "intermediate" | "advanced";
   icon: string;
   impactsScores: CommunicationSubscore[];
 }

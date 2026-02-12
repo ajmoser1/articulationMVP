@@ -12,6 +12,10 @@ export function useScrollReveal(options: ScrollRevealOptions = {}) {
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
+    if (typeof window === "undefined" || typeof window.IntersectionObserver === "undefined") {
+      setIsVisible(true);
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {

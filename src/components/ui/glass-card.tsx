@@ -21,7 +21,7 @@ const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
         className={cn(
           variantClasses[variant],
           animate && "glass-entrance reveal-on-scroll",
-          !hover && "hover:transform-none hover:shadow-none",
+          !hover && "glass-card-static",
           className
         )}
         data-reveal={animate ? "true" : undefined}

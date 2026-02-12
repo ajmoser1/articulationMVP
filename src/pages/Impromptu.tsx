@@ -240,18 +240,6 @@ const Impromptu = () => {
         className="top-56 left-[-140px]"
         zIndex={1}
       />
-      <FuturismBlock
-        variant="block-4"
-        className="top-[70vh] right-[-160px] futurism-strong"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-1"
-        className="top-[145vh] left-[-160px] futurism-strong"
-        borderColor="#F72585"
-        zIndex={2}
-      />
 
       <div className="mb-8 relative z-10">
         <button

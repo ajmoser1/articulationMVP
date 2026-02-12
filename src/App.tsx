@@ -2,7 +2,6 @@ import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Welcome from "./pages/Welcome";
@@ -12,20 +11,35 @@ import Practice from "./pages/Practice";
 import Results from "./pages/Results";
 import DashboardPage from "./pages/DashboardPage";
 import ExercisesPage from "./pages/ExercisesPage";
+import ExerciseDetailPage from "./pages/ExerciseDetailPage";
+import ExercisePracticePage from "./pages/ExercisePracticePage";
 import ProgressPage from "./pages/ProgressPage";
 import ProfilePage from "./pages/ProfilePage";
 import CommunicationProfilePage from "./pages/CommunicationProfilePage";
+import OnboardingBenefitsPage from "./pages/OnboardingBenefitsPage";
 import Impromptu from "./pages/Impromptu";
 import ImpromptuResults from "./pages/ImpromptuResults";
 import NotFound from "./pages/NotFound";
 import { BottomNav } from "@/components/BottomNav";
+import { useStreak } from "@/hooks/useStreak";
 
 const queryClient = new QueryClient();
 
 const getOnboardingComplete = () =>
   typeof window !== "undefined" && window.localStorage.getItem("onboarding_complete") === "true";
 
+const ScrollToTop = () => {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }, [location.pathname]);
+
+  return null;
+};
+
 const AppRoutes = () => {
+  useStreak();
   const location = useLocation();
   const showBottomNav = ["/dashboard", "/exercises", "/progress", "/profile"].some((path) =>
     location.pathname.startsWith(path)
@@ -34,16 +48,18 @@ const AppRoutes = () => {
 
   return (
     <>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Navigate
-              to={onboardingComplete ? "/dashboard" : "/onboarding"}
-              replace
-            />
-          }
-        />
+      <ScrollToTop />
+      <div key={location.pathname} className="route-fade-slide">
+        <Routes location={location}>
+          <Route
+            path="/"
+            element={
+              <Navigate
+                to={onboardingComplete ? "/dashboard" : "/onboarding"}
+                replace
+              />
+            }
+          />
 
         {/* Onboarding flow */}
         <Route path="/onboarding" element={<Welcome />} />
@@ -51,6 +67,7 @@ const AppRoutes = () => {
         <Route path="/onboarding/topics" element={<TopicSelection />} />
         <Route path="/onboarding/practice" element={<Practice />} />
         <Route path="/onboarding/results" element={<Results />} />
+        <Route path="/onboarding/benefits" element={<OnboardingBenefitsPage />} />
 
         {/* Legacy redirects */}
         <Route path="/questionnaire" element={<Navigate to="/onboarding/questionnaire" replace />} />
@@ -63,6 +80,8 @@ const AppRoutes = () => {
         {/* Main app */}
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/exercises" element={<ExercisesPage />} />
+        <Route path="/exercises/:exerciseId" element={<ExerciseDetailPage />} />
+        <Route path="/exercises/:exerciseId/practice" element={<ExercisePracticePage />} />
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/profile" element={<ProfilePage />} />
 
@@ -70,8 +89,9 @@ const AppRoutes = () => {
         <Route path="/impromptu-results" element={<ImpromptuResults />} />
 
         {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </div>
       {showBottomNav && <BottomNav />}
     </>
   );
@@ -119,30 +139,15 @@ const App = () => {
     const mutationObserver = new MutationObserver(() => observeExisting());
     mutationObserver.observe(document.body, { childList: true, subtree: true });
 
-    let ticking = false;
-    const handleScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        document.documentElement.style.setProperty("--scroll-y", `${window.scrollY}px`);
-        ticking = false;
-      });
-    };
-
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
     return () => {
       observer.disconnect();
       mutationObserver.disconnect();
-      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ThemeToggle className="fixed top-6 right-6 z-50" />
         <Toaster />
         <Sonner />
         <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || undefined}>

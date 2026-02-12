@@ -1,13 +1,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { CheckCircle2, Download, Share2, Star, TriangleAlert } from "lucide-react";
+import { CheckCircle2, Download, Lock, Share2, Star, TriangleAlert } from "lucide-react";
 import { GlassCard } from "@/components/ui/glass-card";
 import { Button } from "@/components/ui/button";
 import { FuturismBlock } from "@/components/ui/FuturismBlock";
+import { ACHIEVEMENTS } from "@/data/achievements";
 import { determineArchetype } from "@/data/archetypes";
-import { getUserProgress } from "@/utils/storage";
-import type { CommunicationScore, UserProgress } from "@/types/exercise";
+import { getExerciseHistory, getUserProgress } from "@/utils/storage";
+import type { CommunicationScore, ExerciseAttempt, UserProgress } from "@/types/exercise";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
+import { getAchievementProgress } from "@/utils/achievements";
+import { useCountUp } from "@/hooks/useCountUp";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const USER_ID = "default";
 
@@ -36,16 +40,22 @@ const getStarCount = (score: number) => clamp(Math.round(score / 20), 1, 5);
 const getBarColor = (value: number | null) => {
   if (value === null) return "bg-muted/40";
   if (value >= 80) return "bg-emerald-500/80";
-  if (value >= 60) return "bg-amber-400/80";
+  if (value >= 60) return "bg-emerald-400/75";
   return "bg-red-500/80";
 };
 
 const CommunicationProfilePage = () => {
   const navigate = useNavigate();
   const [progress, setProgress] = useState<UserProgress | null>(null);
+  const [attempts, setAttempts] = useState<ExerciseAttempt[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [animatedOverall, setAnimatedOverall] = useState(0);
+  const [animatedSubscores, setAnimatedSubscores] = useState<Record<string, number>>({});
 
   useEffect(() => {
     setProgress(getUserProgress(USER_ID));
+    setAttempts(getExerciseHistory(USER_ID));
+    setIsLoading(false);
   }, []);
 
   const heroReveal = useScrollReveal({ threshold: 0.2 });
@@ -53,9 +63,11 @@ const CommunicationProfilePage = () => {
   const subscoresReveal = useScrollReveal({ threshold: 0.25 });
   const insightsReveal = useScrollReveal({ threshold: 0.3 });
   const pathReveal = useScrollReveal({ threshold: 0.35 });
+  const achievementsReveal = useScrollReveal({ threshold: 0.2 });
 
   const score = progress?.communicationScore;
   const overallScore = score ? clamp(score.overall, 0, 100) : 0;
+  const overallCount = useCountUp(overallScore, { durationMs: 800 });
   const percentile = getPercentile(overallScore);
   const starCount = getStarCount(overallScore);
 
@@ -65,6 +77,19 @@ const CommunicationProfilePage = () => {
   }, [score]);
 
   const archetypeEmoji = ARCHETYPE_EMOJI[archetype?.id ?? "generic-speaker"];
+  const earnedAchievementIds = new Set(
+    (progress?.achievements ?? []).filter((id) => ACHIEVEMENTS.some((achievement) => achievement.id === id))
+  );
+  const totalAchievements = ACHIEVEMENTS.length;
+  const earnedCount = earnedAchievementIds.size;
+  const achievementsSorted = useMemo(
+    () =>
+      [...ACHIEVEMENTS].sort((a, b) => {
+        if (a.kind !== b.kind) return a.kind.localeCompare(b.kind);
+        return a.name.localeCompare(b.name);
+      }),
+    []
+  );
 
   const scoreValues = useMemo(() => {
     return SCORE_LABELS.map(({ key, label }) => {
@@ -72,6 +97,28 @@ const CommunicationProfilePage = () => {
       return { key, label, value };
     });
   }, [score]);
+
+  useEffect(() => {
+    setAnimatedOverall(0);
+    const frame = window.requestAnimationFrame(() => setAnimatedOverall(overallScore));
+    return () => window.cancelAnimationFrame(frame);
+  }, [overallScore]);
+
+  useEffect(() => {
+    const keys = scoreValues.map((item) => String(item.key));
+    setAnimatedSubscores(
+      keys.reduce((acc, key) => {
+        acc[key] = 0;
+        return acc;
+      }, {} as Record<string, number>)
+    );
+    const timers = scoreValues.map((item, index) =>
+      window.setTimeout(() => {
+        setAnimatedSubscores((prev) => ({ ...prev, [String(item.key)]: item.value ?? 12 }));
+      }, index * 100)
+    );
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [scoreValues]);
 
   const { strongest, weakest } = useMemo(() => {
     const numeric = scoreValues.filter((item) => typeof item.value === "number") as Array<{
@@ -91,43 +138,76 @@ const CommunicationProfilePage = () => {
     }
     navigate("/dashboard");
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-layered px-6 py-10 pb-32 flex flex-col relative page-transition">
+        <div className="max-w-2xl mx-auto w-full flex flex-col gap-8 relative z-10">
+          <GlassCard className="p-8 space-y-4" hover={false}>
+            <Skeleton className="h-5 w-44" />
+            <Skeleton className="h-12 w-72" />
+            <Skeleton className="h-5 w-full" />
+          </GlassCard>
+          <GlassCard className="p-8 space-y-3" hover={false}>
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-12 w-28" />
+            <Skeleton className="h-3 w-full rounded-full" />
+          </GlassCard>
+        </div>
+      </div>
+    );
+  }
  
   return (
     <div className="min-h-screen bg-gradient-layered px-6 py-10 pb-32 flex flex-col relative page-transition">
-      <FuturismBlock
-        variant="block-1"
-        className="top-6 right-[-120px] futurism-intense"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-3"
-        className="top-24 left-[-120px] futurism-intense"
-        borderColor="#F72585"
-        zIndex={2}
-      />
-      <FuturismBlock
-        variant="stripe-2"
-        className="top-40 right-[-160px]"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-2"
-        className="top-[80vh] left-[-180px] futurism-intense"
-        borderColor="#F72585"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-2"
-        className="top-[160vh] right-[-200px] futurism-intense"
-        borderColor="#4ADE80"
-        zIndex={2}
-      />
+      <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+        <FuturismBlock
+          variant="block-1"
+          className="top-8 right-[-140px] opacity-45"
+          borderColor="#4CC9F0"
+          blendMode="normal"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="block-3"
+          className="top-24 left-[-140px] opacity-40"
+          borderColor="#F72585"
+          blendMode="normal"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="triangle-2"
+          className="top-1/2 left-[-180px] opacity-35"
+          borderColor="#4ADE80"
+          blendMode="normal"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="block-4"
+          className="top-[58%] right-[-160px] opacity-40"
+          borderColor="#7209B7"
+          blendMode="normal"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="stripe-1"
+          className="top-40 right-[-200px] opacity-55"
+          blendMode="normal"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="stripe-3"
+          className="bottom-20 left-[-200px] opacity-50"
+          blendMode="normal"
+          zIndex={1}
+        />
+      </div>
+      <div className="profile-content-backdrop" />
 
       <div className="max-w-2xl mx-auto w-full flex flex-col gap-8 relative z-10">
         <section
           ref={heroReveal.ref}
-          className={`section-reveal ${heroReveal.isVisible ? "is-visible" : ""}`}
+          className="section-reveal is-visible"
         >
           <div className="rounded-[28px] overflow-hidden bg-gradient-to-br from-primary/10 via-background to-transparent border border-white/30">
             <div className="p-8 sm:p-10">
@@ -150,7 +230,7 @@ const CommunicationProfilePage = () => {
 
         <section
           ref={scoreReveal.ref}
-          className={`section-reveal ${scoreReveal.isVisible ? "is-visible" : ""}`}
+          className="section-reveal is-visible"
         >
           <GlassCard className="p-8 space-y-6" hover={false}>
             <div className="flex flex-wrap items-center justify-between gap-4">
@@ -159,7 +239,7 @@ const CommunicationProfilePage = () => {
                   Overall score
                 </p>
                 <p className="text-5xl font-serif font-bold text-foreground">
-                  {overallScore}
+                  {Math.round(overallCount)}
                   <span className="text-xl text-muted-foreground font-sans">/100</span>
                 </p>
               </div>
@@ -176,8 +256,8 @@ const CommunicationProfilePage = () => {
             </div>
             <div className="h-3 w-full rounded-full bg-muted/30 overflow-hidden">
               <div
-                className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary"
-                style={{ width: `${overallScore}%` }}
+                className="h-full rounded-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-1000 ease-out"
+                style={{ width: `${animatedOverall}%` }}
               />
             </div>
             <p className="text-sm text-muted-foreground font-sans">
@@ -189,7 +269,7 @@ const CommunicationProfilePage = () => {
 
         <section
           ref={subscoresReveal.ref}
-          className={`section-reveal ${subscoresReveal.isVisible ? "is-visible" : ""}`}
+          className="section-reveal is-visible"
         >
           <GlassCard className="p-8 space-y-6" hover={false}>
             <h2 className="text-2xl font-serif font-semibold text-foreground">
@@ -207,7 +287,7 @@ const CommunicationProfilePage = () => {
                   <div className="h-2.5 w-full rounded-full bg-muted/30 overflow-hidden">
                     <div
                       className={`h-full rounded-full ${getBarColor(item.value)}`}
-                      style={{ width: `${item.value ?? 12}%` }}
+                      style={{ width: `${animatedSubscores[String(item.key)] ?? 0}%`, transition: "width 1000ms ease-out" }}
                     />
                   </div>
                   <div className="flex items-center gap-2 text-xs font-sans text-muted-foreground">
@@ -232,7 +312,7 @@ const CommunicationProfilePage = () => {
 
         <section
           ref={insightsReveal.ref}
-          className={`section-reveal ${insightsReveal.isVisible ? "is-visible" : ""}`}
+          className="section-reveal is-visible"
         >
           <div className="grid gap-4">
             <GlassCard className="p-6 border border-red-500/20 bg-red-500/10" hover={false}>
@@ -268,7 +348,7 @@ const CommunicationProfilePage = () => {
 
         <section
           ref={pathReveal.ref}
-          className={`section-reveal ${pathReveal.isVisible ? "is-visible" : ""}`}
+          className="section-reveal is-visible"
         >
           <GlassCard className="p-8 space-y-6" hover={false}>
             <h2 className="text-2xl font-serif font-semibold text-foreground">
@@ -294,6 +374,83 @@ const CommunicationProfilePage = () => {
                 Push precision and impact with focused challenges
               </li>
             </ol>
+          </GlassCard>
+        </section>
+
+        <section
+          ref={achievementsReveal.ref}
+          className="section-reveal is-visible"
+        >
+          <GlassCard className="p-8 space-y-6" hover={false}>
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-2xl font-serif font-semibold text-foreground">Achievements</h2>
+              <p className="text-sm font-sans text-muted-foreground">
+                {earnedCount}/{totalAchievements} earned
+              </p>
+            </div>
+
+            <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-4 place-items-center">
+              {achievementsSorted.map((achievement) => {
+                const unlocked = earnedAchievementIds.has(achievement.id);
+                const progressMeter =
+                  progress ? getAchievementProgress(achievement, progress, attempts) : null;
+
+                return (
+                  <button
+                    type="button"
+                    key={achievement.id}
+                    className="group relative"
+                    aria-label={`${achievement.name} achievement`}
+                  >
+                    <div
+                      className={`h-14 w-14 rounded-full border flex items-center justify-center text-2xl transition-all ${
+                        unlocked
+                          ? "bg-primary/15 border-primary/35 shadow-[0_0_0_4px_rgba(74,103,65,0.08)]"
+                          : "bg-muted/25 border-white/25 grayscale-[0.5] opacity-80"
+                      }`}
+                    >
+                      <span aria-hidden="true">{achievement.icon}</span>
+                    </div>
+                    {!unlocked && (
+                      <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-background/90 border border-white/25 flex items-center justify-center">
+                        <Lock className="h-3 w-3 text-muted-foreground" />
+                      </span>
+                    )}
+
+                    <div
+                      className={`pointer-events-none absolute left-1/2 top-[calc(100%+10px)] -translate-x-1/2 w-52 rounded-xl border p-3 text-left shadow-xl opacity-0 translate-y-1 transition-all duration-150 z-30
+                      group-hover:opacity-100 group-hover:translate-y-0 group-focus-visible:opacity-100 group-focus-visible:translate-y-0 ${
+                      unlocked
+                        ? "bg-card border-primary/30"
+                        : "bg-card border-white/20"
+                    }`}
+                    >
+                      <p className="text-sm font-semibold text-foreground leading-tight">{achievement.name}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{achievement.requirement}</p>
+                      <p className="text-[11px] text-primary mt-1">+{achievement.xpReward} XP</p>
+                      {progressMeter && !unlocked && (
+                        <div className="mt-2 space-y-1">
+                          <div className="h-1.5 rounded-full bg-muted/30 overflow-hidden">
+                            <div
+                              className="h-full rounded-full bg-primary/75"
+                              style={{
+                                width: `${Math.min(
+                                  100,
+                                  Math.round((progressMeter.current / progressMeter.target) * 100)
+                                )}%`,
+                              }}
+                            />
+                          </div>
+                          <p className="text-[10px] text-muted-foreground">
+                            {Math.min(progressMeter.current, progressMeter.target)}/{progressMeter.target}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
           </GlassCard>
         </section>
 

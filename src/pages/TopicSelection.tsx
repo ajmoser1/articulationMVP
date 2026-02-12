@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings, Trash2, Zap } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, Loader2, MessageCircle, RefreshCw, Settings, Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { clearLocalData, getDemographics, getExerciseHistory, type UserDemographics } from "@/lib/persistence";
 import { GlassCard } from "@/components/ui/glass-card";
@@ -14,7 +14,11 @@ const FALLBACK_TOPICS = [
 
 const TopicSelection = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
+  const query = new URLSearchParams(location.search);
+  const isLibraryEntry = query.get("entry") === "library";
+
   const [topics, setTopics] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [demographics, setDemographics] = useState<UserDemographics | null>(null);
@@ -92,7 +96,7 @@ const TopicSelection = () => {
 
   const handleTopicSelect = (topic: string) => {
     localStorage.setItem("selectedTopic", topic);
-    navigate("/onboarding/practice");
+    navigate(isLibraryEntry ? "/onboarding/practice?entry=library" : "/onboarding/practice");
   };
 
   const handleRefresh = () => {
@@ -132,20 +136,17 @@ const TopicSelection = () => {
         className="top-32 right-[-140px]"
         zIndex={1}
       />
-      <FuturismBlock
-        variant="block-2"
-        className="top-[70vh] left-[-160px] futurism-strong"
-        borderColor="#F72585"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-2"
-        className="top-[145vh] right-[-180px] futurism-strong"
-        borderColor="#4CC9F0"
-        zIndex={2}
-      />
-      {/* Sticky options */}
-      <div className="fixed top-6 right-20 z-40">
+      {/* Sticky top-right actions */}
+      <div className="fixed top-16 right-6 z-40 flex items-center gap-2">
+        {!isLoading && (
+          <button
+            onClick={handleRefresh}
+            className="flex items-center gap-2 h-11 px-4 btn-glass text-foreground font-sans text-sm"
+          >
+            <RefreshCw className="w-4 h-4" />
+            New topics
+          </button>
+        )}
         <Popover>
           <PopoverTrigger asChild>
             <button
@@ -184,17 +185,7 @@ const TopicSelection = () => {
           <ArrowLeft className="w-4 h-4" />
           Back
         </button>
-        <div className="flex items-center gap-2">
-          {!isLoading && (
-            <button
-              onClick={handleRefresh}
-              className="flex items-center gap-2 h-11 px-4 btn-glass text-foreground font-sans text-sm"
-            >
-              <RefreshCw className="w-4 h-4" />
-              New topics
-            </button>
-          )}
-        </div>
+        <div />
       </div>
 
       <div className="flex-1 max-w-md mx-auto w-full flex flex-col relative z-10">
@@ -207,28 +198,6 @@ const TopicSelection = () => {
             Pick a topic to practice speaking about for 45-60 seconds
           </p>
         </div>
-
-        {/* Impromptu exercise link */}
-        <GlassCard
-          variant="interactive"
-          className="p-6 mb-4 opacity-0 animate-fade-in border-2 border-primary/30"
-          style={{ animationDelay: "0.15s" }}
-                onClick={() => navigate("/impromptu")}
-        >
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-full glass-subtle flex items-center justify-center flex-shrink-0 bg-primary/10">
-              <Zap className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1">
-              <p className="text-foreground font-serif font-semibold text-lg leading-relaxed">
-                Impromptu Response
-              </p>
-              <p className="text-sm text-muted-foreground font-sans mt-1">
-                5 seconds to think, then record your opinion or analysis
-              </p>
-            </div>
-          </div>
-        </GlassCard>
 
         {/* Topics */}
         <div className="flex-1 flex flex-col gap-4">

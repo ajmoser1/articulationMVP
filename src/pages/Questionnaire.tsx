@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import { ArrowLeft, ChevronDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { saveDemographics } from "@/lib/persistence";
+import { getDemographics, saveDemographics } from "@/lib/persistence";
 import { GlassCard } from "@/components/ui/glass-card";
 import { FuturismBlock } from "@/components/ui/FuturismBlock";
 
@@ -46,13 +46,19 @@ interface FormErrors {
 
 const Questionnaire = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search);
+  const returnToProfile = query.get("returnTo") === "profile";
   const [countryOpen, setCountryOpen] = useState(false);
-  const [formData, setFormData] = useState<FormData>({
-    gender: "",
-    ageRange: "",
-    country: "",
-    currentRole: "",
-    hobbies: "",
+  const [formData, setFormData] = useState<FormData>(() => {
+    const saved = getDemographics();
+    return {
+      gender: saved?.gender ?? "",
+      ageRange: saved?.ageRange ?? "",
+      country: saved?.country ?? "",
+      currentRole: saved?.currentRole ?? "",
+      hobbies: saved?.hobbies ?? "",
+    };
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -79,7 +85,7 @@ const Questionnaire = () => {
     
     if (validateForm()) {
       saveDemographics(formData);
-      navigate("/onboarding/topics");
+      navigate(returnToProfile ? "/profile" : "/onboarding/topics");
     }
   };
 
@@ -110,21 +116,9 @@ const Questionnaire = () => {
         className="top-24 right-[-140px]"
         zIndex={1}
       />
-      <FuturismBlock
-        variant="block-3"
-        className="top-[75vh] left-[-160px] futurism-strong"
-        borderColor="#F72585"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-1"
-        className="top-[150vh] right-[-180px] futurism-strong"
-        borderColor="#4CC9F0"
-        zIndex={2}
-      />
       <div className="mb-8 relative z-10">
         <button 
-          onClick={() => navigate("/")}
+          onClick={() => navigate(returnToProfile ? "/profile" : "/")}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors font-sans text-sm"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -300,7 +294,7 @@ const Questionnaire = () => {
                 className="btn-warm w-full py-6 text-lg font-sans"
                 size="lg"
               >
-                Continue
+                {returnToProfile ? "Save & Return to Profile" : "Continue"}
               </Button>
             </div>
           </form>

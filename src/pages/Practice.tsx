@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
@@ -13,12 +13,15 @@ type RecordingState = "idle" | "recording" | "processing";
 
 const Practice = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [topic, setTopic] = useState<string>("");
   const [recordingState, setRecordingState] = useState<RecordingState>("idle");
   const [timeRemaining, setTimeRemaining] = useState(60);
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  const query = new URLSearchParams(location.search);
+  const isLibraryEntry = query.get("entry") === "library";
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -79,7 +82,7 @@ const Practice = () => {
         const transcript = await transcribeAudio(blob);
         const durationMinutes = Math.max(0.1, durationSeconds / 60);
         const analysisResults = analyzeFillerWords(transcript, durationMinutes);
-        navigate("/onboarding/results", {
+        navigate(isLibraryEntry ? "/onboarding/results?entry=library" : "/onboarding/results", {
           state: { transcript, analysisResults, durationMinutes },
         });
       } catch (err) {
@@ -88,7 +91,7 @@ const Practice = () => {
         setTranscriptionError(message);
       }
     },
-    [navigate]
+    [navigate, isLibraryEntry]
   );
 
   const startRecording = async () => {
@@ -232,18 +235,6 @@ const Practice = () => {
         variant="stripe-2"
         className="top-56 left-[-140px]"
         zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-4"
-        className="top-[70vh] right-[-160px] futurism-strong"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-1"
-        className="top-[145vh] left-[-160px] futurism-strong"
-        borderColor="#F72585"
-        zIndex={2}
       />
       <div className="mb-8 relative z-10">
         <button

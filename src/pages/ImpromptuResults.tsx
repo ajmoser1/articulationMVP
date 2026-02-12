@@ -139,46 +139,37 @@ const ImpromptuResults = () => {
 
   return (
     <div className="min-h-screen bg-gradient-layered flex flex-col pb-24 relative">
-      <FuturismBlock
-        variant="block-1"
-        className="top-6 right-[-140px] futurism-intense"
-        borderColor="#7209B7"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-3"
-        className="top-20 left-[-140px] futurism-intense"
-        borderColor="#4CC9F0"
-        zIndex={2}
-      />
-      <FuturismBlock
-        variant="triangle-2"
-        className="bottom-[-60px] left-[-100px] futurism-intense"
-        borderColor="#4ADE80"
-        zIndex={2}
-      />
-      <FuturismBlock
-        variant="stripe-1"
-        className="top-24 right-[-140px]"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="stripe-2"
-        className="top-44 left-[-140px]"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-4"
-        className="top-[80vh] right-[-180px] futurism-intense"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-1"
-        className="top-[160vh] left-[-180px] futurism-intense"
-        borderColor="#F72585"
-        zIndex={2}
-      />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <FuturismBlock
+          variant="block-1"
+          className="top-6 right-[-140px] futurism-intense"
+          borderColor="#7209B7"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="block-3"
+          className="top-20 left-[-140px] futurism-intense"
+          borderColor="#4CC9F0"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="triangle-2"
+          className="bottom-[-60px] left-[-100px] futurism-intense"
+          borderColor="#4ADE80"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="stripe-1"
+          className="top-24 right-[-140px]"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="stripe-2"
+          className="top-44 left-[-140px]"
+          zIndex={1}
+        />
+      </div>
+      <div className="content-backdrop" />
 
       <div className="flex-1 px-6 py-10 max-w-3xl mx-auto w-full flex flex-col gap-12 md:gap-16 relative z-10">
         {/* Hero - metrics */}
@@ -285,7 +276,7 @@ const ImpromptuResults = () => {
         </GlassCard>
 
         {/* Buttons */}
-        <section className="flex flex-wrap gap-4 pt-4 sticky bottom-6 bg-gradient-to-t from-background/90 to-transparent backdrop-blur-sm pb-4">
+        <section className="flex flex-wrap gap-4 pt-4 pb-4">
           <Button
             onClick={() => navigate("/impromptu")}
             className="btn-warm font-sans"

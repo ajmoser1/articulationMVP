@@ -6,9 +6,12 @@ import type {
   UserProgress,
 } from "@/types/exercise";
 import { determineArchetype, DEFAULT_ARCHETYPE } from "@/data/archetypes";
+import { ACHIEVEMENTS } from "@/data/achievements";
+import { checkAchievements } from "@/utils/achievements";
 
 const PROGRESS_KEY_PREFIX = "user_progress:";
 const ATTEMPTS_KEY_PREFIX = "exercise_attempts:";
+const STREAK_MILESTONES = [7, 14, 30, 60, 100] as const;
 
 function isStorageAvailable(): boolean {
   if (typeof window === "undefined") return false;
@@ -35,6 +38,15 @@ function safeSetItem(key: string, value: string): void {
   if (!isStorageAvailable()) return;
   try {
     window.localStorage.setItem(key, value);
+  } catch {
+    // Ignore quota / privacy errors.
+  }
+}
+
+function safeRemoveItem(key: string): void {
+  if (!isStorageAvailable()) return;
+  try {
+    window.localStorage.removeItem(key);
   } catch {
     // Ignore quota / privacy errors.
   }
@@ -85,9 +97,20 @@ function parseProgress(raw: string | null, userId: string): UserProgress {
   try {
     const parsed = JSON.parse(raw) as UserProgress;
     const score = parsed.communicationScore;
+    const migratedAchievements = (Array.isArray(parsed.achievements) ? parsed.achievements : []).map(
+      (achievement) => {
+        if (achievement === "🔥 7-Day Streak") return "streak-7";
+        if (achievement === "🔥 14-Day Streak") return "streak-14";
+        if (achievement === "🔥 30-Day Streak") return "streak-30";
+        if (achievement === "🔥 60-Day Streak") return "streak-60";
+        if (achievement === "🔥 100-Day Streak") return "streak-100";
+        return achievement;
+      }
+    );
     return {
       ...parsed,
       userId,
+      achievements: [...new Set(migratedAchievements)],
       communicationScore: {
         ...score,
         lastUpdated: new Date(score.lastUpdated),
@@ -152,12 +175,38 @@ export function getExerciseAttempts(userId: string, exerciseId: string): Exercis
   return getExerciseHistory(userId).filter((attempt) => attempt.exerciseId === exerciseId);
 }
 
+export function clearUserProgressData(userId: string): void {
+  safeRemoveItem(`${PROGRESS_KEY_PREFIX}${userId}`);
+  safeRemoveItem(`${ATTEMPTS_KEY_PREFIX}${userId}`);
+}
+
+export function refreshStreak(userId: string, referenceDate = new Date()): UserProgress {
+  const progress = getUserProgress(userId);
+  if (!progress.lastPracticeDate) return progress;
+
+  const today = toDateKey(referenceDate);
+  const diff = dateDiffInDays(progress.lastPracticeDate, today);
+  if (diff <= 1) return progress;
+
+  const reset: UserProgress = {
+    ...progress,
+    currentStreak: 0,
+  };
+  setProgress(userId, reset);
+  return reset;
+}
+
 export function updateStreak(progress: UserProgress, practiceDate = new Date()): UserProgress {
   const today = toDateKey(practiceDate);
   const last = progress.lastPracticeDate;
 
   if (!last) {
-    const next = { ...progress, currentStreak: 1, longestStreak: Math.max(1, progress.longestStreak), lastPracticeDate: today };
+    const next = {
+      ...progress,
+      currentStreak: 1,
+      longestStreak: Math.max(1, progress.longestStreak),
+      lastPracticeDate: today,
+    };
     return next;
   }
 
@@ -198,7 +247,11 @@ export function updateProgressAfterExercise(
   archetypeOverride?: UserArchetype
 ): UserProgress {
   let progress = getUserProgress(userId);
+  const previousStreak = progress.currentStreak;
   progress = updateStreak(progress, attempt.timestamp);
+  const milestone = STREAK_MILESTONES.find(
+    (target) => previousStreak < target && progress.currentStreak >= target
+  );
 
   const updatedScore = { ...progress.communicationScore };
   Object.entries(attempt.impactedScores).forEach(([subscore, value]) => {
@@ -212,15 +265,38 @@ export function updateProgressAfterExercise(
   updatedScore.overall = recalcOverall(updatedScore);
   updatedScore.lastUpdated = new Date();
 
-  const nextProgress: UserProgress = {
+  let nextProgress: UserProgress = {
     ...progress,
     communicationScore: updatedScore,
     totalXP: progress.totalXP + attempt.xpEarned,
     totalSessions: progress.totalSessions + 1,
     totalPracticeTime: progress.totalPracticeTime + attempt.duration,
+    achievements: [...progress.achievements],
   };
 
+  if (milestone) {
+    const streakAchievement = ACHIEVEMENTS.find(
+      (achievement) => achievement.kind === "streak" && achievement.target === milestone
+    );
+    if (streakAchievement && !nextProgress.achievements.includes(streakAchievement.id)) {
+      nextProgress.achievements.push(streakAchievement.id);
+      nextProgress.totalXP += streakAchievement.xpReward;
+    }
+  }
+
   nextProgress.archetype = archetypeOverride ?? determineArchetype(nextProgress.communicationScore) ?? DEFAULT_ARCHETYPE;
+
+  const attemptHistory = [...getExerciseHistory(userId), attempt];
+  const newlyUnlocked = checkAchievements(nextProgress, attemptHistory);
+  if (newlyUnlocked.length > 0) {
+    const unlockedIds = new Set(nextProgress.achievements);
+    newlyUnlocked.forEach((achievement) => {
+      if (unlockedIds.has(achievement.id)) return;
+      nextProgress.achievements.push(achievement.id);
+      nextProgress.totalXP += achievement.xpReward;
+      unlockedIds.add(achievement.id);
+    });
+  }
 
   setProgress(userId, nextProgress);
   persistAttempt(userId, attempt);

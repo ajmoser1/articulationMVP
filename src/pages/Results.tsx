@@ -15,7 +15,11 @@ import { FILLER_CATEGORIES } from "@/lib/fillerWords";
 import { useScrollReveal } from "@/hooks/useScrollReveal";
 import { useToast } from "@/hooks/use-toast";
 import { getExerciseAttempts, getUserProgress, saveExerciseAttempt } from "@/utils/storage";
+import { getAchievementById } from "@/utils/achievements";
+import { AchievementToast } from "@/components/AchievementToast";
 import type { ExerciseAttempt } from "@/types/exercise";
+import { analyzeSpeechDiagnostics } from "@/utils/speechAnalysis";
+import { useCountUp } from "@/hooks/useCountUp";
 
 const TYPEWRITER_MS_PER_CHAR = 40;
 
@@ -99,27 +103,20 @@ function getDistributionInsight(
   return "You use more fillers toward the end—try wrapping up with a clear conclusion.";
 }
 
-function useCountUp(target: number, durationMs: number) {
-  const [value, setValue] = useState(0);
-
-  useEffect(() => {
-    const start = performance.now();
-    const animate = (now: number) => {
-      const progress = Math.min(1, (now - start) / durationMs);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      setValue(target * eased);
-      if (progress < 1) requestAnimationFrame(animate);
-    };
-    requestAnimationFrame(animate);
-  }, [target, durationMs]);
-
-  return value;
+function triggerHaptic(pattern: number | number[]) {
+  if (typeof window === "undefined") return;
+  const nav = navigator as Navigator & { vibrate?: (p: number | number[]) => boolean };
+  if (typeof nav.vibrate === "function") {
+    nav.vibrate(pattern);
+  }
 }
 
 const Results = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const query = new URLSearchParams(location.search);
+  const isLibraryEntry = query.get("entry") === "library";
   const state = location.state as ResultsLocationState;
   const transcript = state?.transcript;
   const passedAnalysis = state?.analysisResults;
@@ -137,7 +134,10 @@ const Results = () => {
   const [glowPositions, setGlowPositions] = useState<Set<number>>(new Set());
   const [xpEarned, setXpEarned] = useState(0);
   const [improvedSubscore, setImprovedSubscore] = useState<string | null>(null);
+  const [scoreImprovementPct, setScoreImprovementPct] = useState(0);
   const [streakMaintained, setStreakMaintained] = useState(false);
+  const [streakMilestone, setStreakMilestone] = useState<number | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const USER_ID = "default";
 
@@ -207,14 +207,10 @@ const Results = () => {
 
     const fillerCount = analysisResults.totalFillerWords;
     const fluencyScore = Math.max(0, 100 - fillerCount * 2);
-    const meanderingDetected =
-      analysisResults.distributionAnalysis.middle >
-        analysisResults.distributionAnalysis.beginning +
-          analysisResults.distributionAnalysis.end &&
-      fillerCount >= 6;
-    const clarityScore = meanderingDetected
-      ? Math.max(0, 100 - analysisResults.distributionAnalysis.middle * 3)
-      : null;
+    const diagnostics = analyzeSpeechDiagnostics(transcript, durationMinutes, {
+      fillerWordCount: fillerCount,
+    });
+    const clarityScore = diagnostics.subscores.clarity;
 
     const attempts = getExerciseAttempts(USER_ID, "filler-words");
     const prevAttempt = attempts[attempts.length - 1];
@@ -248,9 +244,12 @@ const Results = () => {
     const baseXp = 50;
     const totalXp = baseXp + improvementBonus + streakBonus + personalBestBonus;
 
-    const impactedScores: Record<"fluency" | "clarity", number> = {
-      fluency: fluencyScore,
-      ...(clarityScore !== null ? { clarity: clarityScore } : {}),
+    const impactedScores = {
+      fluency: diagnostics.subscores.fluency,
+      clarity: diagnostics.subscores.clarity,
+      precision: diagnostics.subscores.precision,
+      confidence: diagnostics.subscores.confidence,
+      impact: diagnostics.subscores.impact,
     };
 
     const attempt: ExerciseAttempt = {
@@ -262,7 +261,12 @@ const Results = () => {
       score: fluencyScore,
       metrics: {
         fluencyScore,
-        clarityScore,
+        clarityScore: diagnostics.subscores.clarity,
+        paceScore: diagnostics.pace.score,
+        precisionScore: diagnostics.precision.score,
+        confidenceScore: diagnostics.confidence.score,
+        impactScore: diagnostics.impact.score,
+        diagnostics,
         fillerCount,
         fillersPerMinute: analysisResults.fillersPerMinute,
         categoryCounts: analysisResults.categoryCounts,
@@ -274,15 +278,49 @@ const Results = () => {
 
     const firstExercise = attempts.length === 0;
     const archetypeOverride = firstExercise ? undefined : progressBefore.archetype;
-    saveExerciseAttempt(USER_ID, attempt, archetypeOverride);
+    const updatedProgress = saveExerciseAttempt(USER_ID, attempt, archetypeOverride);
+    const unlockedAchievementIds = updatedProgress.achievements.filter(
+      (id) => !progressBefore.achievements.includes(id)
+    );
+    const milestones = [7, 14, 30, 60, 100];
+    const hitMilestone = milestones.find(
+      (m) => progressBefore.currentStreak < m && updatedProgress.currentStreak >= m
+    );
 
-    setXpEarned(totalXp);
+    setXpEarned(Math.max(0, updatedProgress.totalXP - progressBefore.totalXP));
     setStreakMaintained(streakMaintainedNow);
-    setImprovedSubscore(clarityScore !== null ? "Clarity" : "Fluency");
+    setImprovedSubscore(diagnostics.subscores.clarity >= diagnostics.subscores.fluency ? "Clarity" : "Fluency");
+    setScoreImprovementPct(Math.round(improvementPct));
 
     toast({
       title: "Nice work!",
       description: `You earned ${totalXp} XP.`,
+    });
+
+    if (hitMilestone) {
+      setStreakMilestone(hitMilestone);
+      setShowConfetti(true);
+      window.setTimeout(() => setShowConfetti(false), 2200);
+      triggerHaptic([30, 20, 30]);
+      toast({
+        title: `🎉 ${hitMilestone}-Day Streak! You're on fire!`,
+        description: "Consistency compounds. Keep it alive tomorrow.",
+      });
+    } else if (improvementPct > 0) {
+      setShowConfetti(true);
+      window.setTimeout(() => setShowConfetti(false), 1200);
+      triggerHaptic(20);
+    }
+
+    unlockedAchievementIds.forEach((achievementId) => {
+      const achievement = getAchievementById(achievementId);
+      if (!achievement) return;
+      triggerHaptic([20, 10, 20]);
+      toast({
+        title: "Achievement Unlocked!",
+        description: <AchievementToast achievement={achievement} />,
+        duration: 4000,
+      });
     });
 
     saveExerciseResult({
@@ -389,9 +427,9 @@ const Results = () => {
   const { totalFillerWords, fillersPerMinute, categoryCounts, distributionAnalysis } =
     analysisResults;
 
-  const totalCount = useCountUp(totalFillerWords, 800);
-  const fpmCount = useCountUp(fillersPerMinute, 800);
-  const xpCount = useCountUp(xpEarned, 800);
+  const totalCount = useCountUp(totalFillerWords, { durationMs: 800 });
+  const fpmCount = useCountUp(fillersPerMinute, { durationMs: 800, delayMs: 100 });
+  const xpCount = useCountUp(xpEarned, { durationMs: 800, delayMs: 200 });
 
   const heroReveal = useScrollReveal({ threshold: 0.1 });
   const categoryReveal = useScrollReveal({ threshold: 0.2 });
@@ -417,50 +455,52 @@ const Results = () => {
   ];
 
   return (
-    <div className="min-h-[100dvh] bg-gradient-layered pb-24 relative overflow-visible">
+    <div className="min-h-[100dvh] bg-gradient-layered pb-24 relative">
       {/* Flash overlay */}
       {flashKey > 0 && <div key={flashKey} className="results-flash-overlay" />}
+      {showConfetti && (
+        <div className="confetti-overlay" aria-hidden>
+          {Array.from({ length: 26 }).map((_, i) => (
+            <span
+              key={i}
+              className="confetti-piece"
+              style={{ left: `${(i / 26) * 100}%`, animationDelay: `${(i % 7) * 70}ms` }}
+            />
+          ))}
+        </div>
+      )}
 
-      <FuturismBlock
-        variant="block-1"
-        className="top-6 right-[-140px] futurism-intense"
-        borderColor="#F72585"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-3"
-        className="top-20 left-[-140px] futurism-intense"
-        borderColor="#4CC9F0"
-        zIndex={2}
-      />
-      <FuturismBlock
-        variant="triangle-2"
-        className="bottom-[-60px] left-[-100px] futurism-intense"
-        borderColor="#4ADE80"
-        zIndex={2}
-      />
-      <FuturismBlock
-        variant="stripe-1"
-        className="top-24 right-[-140px]"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="stripe-2"
-        className="top-44 left-[-140px]"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="block-4"
-        className="top-[80vh] right-[-180px] futurism-intense"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-1"
-        className="top-[160vh] left-[-180px] futurism-intense"
-        borderColor="#F72585"
-        zIndex={2}
-      />
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <FuturismBlock
+          variant="block-1"
+          className="top-6 right-[-140px] futurism-intense"
+          borderColor="#F72585"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="block-3"
+          className="top-20 left-[-140px] futurism-intense"
+          borderColor="#4CC9F0"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="triangle-2"
+          className="bottom-[-60px] left-[-100px] futurism-intense"
+          borderColor="#4ADE80"
+          zIndex={2}
+        />
+        <FuturismBlock
+          variant="stripe-1"
+          className="top-24 right-[-140px]"
+          zIndex={1}
+        />
+        <FuturismBlock
+          variant="stripe-2"
+          className="top-44 left-[-140px]"
+          zIndex={1}
+        />
+      </div>
+      <div className="content-backdrop" />
 
       <div className="px-6 py-10 pb-28 max-w-3xl mx-auto w-full flex flex-col gap-16 md:gap-20 relative z-10">
         {/* Section 1 - Hero metrics + transcript */}
@@ -489,12 +529,14 @@ const Results = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="text-3xl font-serif font-bold text-primary tabular-nums">
+              <div className={`text-3xl font-serif font-bold text-primary tabular-nums ${scoreImprovementPct > 0 ? "score-pop" : ""}`}>
                 {Math.round(xpCount)}
               </div>
               <div className="text-sm text-muted-foreground font-sans">
                 Points earned {improvedSubscore ? `• ${improvedSubscore} improved` : ""}
+                {scoreImprovementPct > 0 ? ` • ↑ ${scoreImprovementPct}%` : ""}
                 {streakMaintained ? " • Streak maintained" : ""}
+                {streakMilestone ? ` • 🔥🎉 ${streakMilestone}-day milestone` : ""}
               </div>
             </div>
           </div>
@@ -669,7 +711,9 @@ const Results = () => {
         {/* Buttons */}
         <section className="flex flex-wrap gap-4 pt-4 pb-6">
           <Button
-            onClick={() => navigate("/onboarding/topics")}
+            onClick={() =>
+              navigate(isLibraryEntry ? "/onboarding/topics?entry=library" : "/onboarding/topics")
+            }
             className="btn-warm font-sans"
           >
             Try Another Topic
@@ -678,16 +722,19 @@ const Results = () => {
             variant="secondary"
             className="btn-glass font-sans"
             onClick={() => {
+              if (isLibraryEntry) {
+                navigate("/dashboard");
+                return;
+              }
               if (typeof window !== "undefined") {
                 window.localStorage.setItem("onboarding_complete", "true");
+                navigate("/onboarding/benefits");
+                return;
               }
-              const next = xpEarned > 0 && getExerciseAttempts(USER_ID, "filler-words").length === 1
-                ? "/communication-profile"
-                : "/dashboard";
-              navigate(next);
+              navigate("/onboarding/benefits");
             }}
           >
-            View Progress
+            Show Me Everything
           </Button>
         </section>
       </div>

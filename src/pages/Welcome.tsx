@@ -36,18 +36,6 @@ const Welcome = () => {
         className="top-28 right-[-120px]"
         zIndex={1}
       />
-      <FuturismBlock
-        variant="block-4"
-        className="top-[70vh] left-[-140px] futurism-strong"
-        borderColor="#4CC9F0"
-        zIndex={1}
-      />
-      <FuturismBlock
-        variant="triangle-2"
-        className="top-[140vh] right-[-180px] futurism-strong"
-        borderColor="#4ADE80"
-        zIndex={2}
-      />
       <div className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full relative z-10">
         {/* Icon */}
         <div className="mb-8 opacity-0 animate-fade-in" style={{ animationDelay: "0.1s" }}>
